@@ -1,0 +1,8 @@
+bool x_cropDetectionActive
+bool x_cropDetected
+bool x_XgoNegative
+bool x_XgoPositive
+bool x_XisRight
+bool x_YgoPositive
+bool x_YgoNegative
+bool x_YisRight

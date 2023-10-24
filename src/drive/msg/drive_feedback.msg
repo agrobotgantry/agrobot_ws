@@ -1,0 +1,5 @@
+bool x_movingForward
+bool x_movingBackwards
+bool x_movingLeft
+bool x_movingRight
+uint8 i_currentSpeed

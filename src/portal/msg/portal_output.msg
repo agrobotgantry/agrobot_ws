@@ -1,0 +1,10 @@
+bool x_XgoPositive
+bool x_XgoNegative
+bool x_YgoPositive
+bool x_YgoNegative
+bool x_ZgoUp
+bool x_ZgoDown
+bool x_goHomePosition
+bool x_speedFast
+bool x_positionLightOn
+bool x_recogniseLightOn

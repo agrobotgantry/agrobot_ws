@@ -1,0 +1,2 @@
+bool x_gripperOpened
+bool x_gripperClosed

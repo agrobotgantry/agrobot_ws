@@ -1,0 +1,4 @@
+uint8 i_distanceSensorFrontLeft
+uint8 i_distanceSensorFrontRight
+uint8 i_distanceSensorBackLeft
+uint8 i_distanceSensorBackRight

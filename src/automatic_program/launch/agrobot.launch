@@ -1,0 +1,21 @@
+<launch>
+    <node name="automatic_program_node" pkg="automatic_program" type="automatic_program_node.py" respawn="true" output="screen"/>
+
+    <node name="drive_node" pkg="drive" type="drive_node.py" respawn="true" output="screen"/>
+    <node name="rosserial_drive_node" pkg="rosserial_python" type="serial_node.py" args="/dev/arduino_drive"/>
+
+    <node name="portal_node" pkg="portal" type="portal_node.py" respawn="true" output="screen"/>
+    <node name="rosserial_portal_node" pkg="rosserial_python" type="serial_node.py" args="/dev/arduino_portal"/>
+    
+    <node name="gripper_node" pkg="gripper" type="gripper_node.py" respawn="true" output="screen"/>
+
+    <node name="position_crop_node" pkg="position_crop" type="position_crop_node.py" respawn="true" output="screen"/>
+    
+    <node name="DWM1001_Active_Left" pkg="uwb_tag_drivers" type="dwm1001_active" respawn="true" output="screen">
+        <rosparam file="$(find uwb_tag_drivers)/config/paramsTagLeft.yaml" command="load"/>
+    </node>
+    <node name="DWM1001_Active_Right" pkg="uwb_tag_drivers" type="dwm1001_active" respawn="true" output="screen">
+        <rosparam file="$(find uwb_tag_drivers)/config/paramsTagRight.yaml" command="load"/>
+    </node>
+    
+</launch>

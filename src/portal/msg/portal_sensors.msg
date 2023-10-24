@@ -1,0 +1,6 @@
+bool x_XendSwitchPositive
+bool x_XendSwitchNegative
+bool x_YendSwitchPositive
+bool x_YendSwitchNegative
+bool x_ZendSwitchUp
+bool x_ZendSwitchDown

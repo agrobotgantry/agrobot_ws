@@ -1,0 +1,6 @@
+<launch>
+
+    <node name="drive_node" pkg="drive" type="drive_node.py" respawn="true" output="screen"/>
+    <node name="rosserial_drive_node" pkg="rosserial_python" type="serial_node.py" args="/dev/arduino_drive"/>
+
+</launch>

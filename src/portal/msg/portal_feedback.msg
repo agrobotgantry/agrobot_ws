@@ -1,0 +1,10 @@
+bool x_XgoingPositive
+bool x_XgoingNegative
+bool x_YgoingPositive
+bool x_YgoingNegative
+bool x_ZgoingUp
+bool x_ZgoingDown
+bool x_isHomePosition
+bool x_speedFastActive
+bool x_positionLightIsOn
+bool x_recogniseLightIsOn

@@ -1,0 +1,10 @@
+<launch>
+
+    <node name="DWM1001_Active" pkg="dwm1001_uwb_tag_drivers" type="dwm1001_active" respawn="true" output="screen">
+        <rosparam file="$(uwb)/config/paramsTagLinks.yaml" command="load"/>
+    </node>
+    <node name="DWM1001_Active" pkg="dwm1001_uwb_tag_drivers" type="dwm1001_active" respawn="true" output="screen">
+        <rosparam file="$(uwb)/config/paramsTagRechts.yaml" command="load"/>
+    </node>
+
+</launch>
