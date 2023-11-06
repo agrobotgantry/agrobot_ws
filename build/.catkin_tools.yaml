@@ -1,0 +1,6 @@
+devel_space: /home/cas/agrobot_ws/devel
+install: false
+install_space: /home/cas/agrobot_ws/install
+profile: default
+source_space: /home/cas/agrobot_ws/src
+workspace: /home/cas/agrobot_ws
