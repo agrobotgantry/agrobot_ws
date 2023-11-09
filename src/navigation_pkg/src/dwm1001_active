@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ 
     For more info on the documentation go to https://www.decawave.com/sites/default/files/dwm1001-api-guide.pdf
 """
 
 import rospy, time, serial, os, sys, random
 
-from geometry_msgs.msg  import Pose
+#from geometry_msgs.msg  import Pose
 from geometry_msgs.msg  import PoseStamped
 from std_msgs.msg       import Float64
 
@@ -24,7 +24,7 @@ class dwm1001_localizer:
         # Get port and tag name
         self.dwm_port = rospy.get_param('~port')
         self.tag_name = rospy.get_param('~tag_name')
-	self.use_network = rospy.get_param('~use_network', False)
+        self.use_network = rospy.get_param('~use_network', False)
         self.network = rospy.get_param('~network', "default")
         self.verbose = rospy.get_param('~verbose', False)
         
@@ -76,7 +76,7 @@ class dwm1001_localizer:
 
             while not rospy.is_shutdown():
                 # just read everything from serial port
-                serialReadLine = self.serialPortDWM1001.read_until()
+                serialReadLine = str(self.serialPortDWM1001.read_until())
 
                 try:
                     self.publishTagPositions(serialReadLine)
@@ -97,7 +97,7 @@ class dwm1001_localizer:
             self.serialPortDWM1001.write(DWM1001_API_COMMANDS.RESET)
             self.serialPortDWM1001.write(DWM1001_API_COMMANDS.SINGLE_ENTER)
             self.rate.sleep()
-            serialReadLine = self.serialPortDWM1001.read_until()
+            serialReadLine = str(self.serialPortDWM1001.read_until())
             if "reset" in serialReadLine:
                 rospy.loginfo("succesfully closed ")
                 self.serialPortDWM1001.close()
@@ -116,7 +116,7 @@ class dwm1001_localizer:
         if "DIST" in arrayData[0] :
 
             # The number of elements should be 2 + 6*NUMBER_OF_ANCHORS + 5 (TAG POS)
-            number_of_anchors = (len(arrayData) - 7)/6
+            number_of_anchors = int((len(arrayData) - 7)/6)
 
             for i in range(number_of_anchors) :
 
