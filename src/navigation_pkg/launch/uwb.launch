@@ -3,11 +3,9 @@
     <node name="DWM1001_Active_Left" pkg="navigation_pkg" type="dwm1001_active" respawn="true" output="screen">
         <rosparam file="$(find navigation_pkg)/config/paramsTagLeft.yaml" command="load"/>
     </node>
-
-    <!--
+  
     <node name="DWM1001_Active_Right" pkg="navigation_pkg" type="dwm1001_active" respawn="true" output="screen">
         <rosparam file="$(find navigation_pkg)/config/paramsTagRight.yaml" command="load"/>
     </node>
-    -->
-
+    
 </launch>
