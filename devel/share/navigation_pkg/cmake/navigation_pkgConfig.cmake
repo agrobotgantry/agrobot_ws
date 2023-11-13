@@ -1,0 +1,1 @@
+/home/cas/agrobot_ws/devel/.private/navigation_pkg/share/navigation_pkg/cmake/navigation_pkgConfig.cmake

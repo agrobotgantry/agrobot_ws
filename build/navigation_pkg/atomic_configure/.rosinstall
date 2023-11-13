@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/cas/agrobot_ws/devel/.private/navigation_pkg/setup.sh
