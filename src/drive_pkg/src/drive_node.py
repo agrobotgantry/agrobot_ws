@@ -50,8 +50,9 @@ class Drive(object):
         self.POSITION_B23.x = 1.0
         self.POSITION_B23.y = 4.5
 
-        # Property for object detection
+        # Properties for subscribers callbacks
         self.object_detected = False
+        self.arduino_steering_state = 0
 
         # Properties for positions of the UWB modules
         self.position_uwb_left = Point()
@@ -64,12 +65,14 @@ class Drive(object):
 
         # Initialise subscribers
         rospy.Subscriber('/agrobot_object_detection/object_detected', Bool, self.object_detected_callback)
+        rospy.Subscriber('/agrobot_steering/arduino_state', Int8, self.arduino_steering_state_callback)
         rospy.Subscriber('/dwm1001/tag/tagLeft/position', PoseStamped, self.uwb_left_callback)
         rospy.Subscriber('/dwm1001/tag/tagRight/position', PoseStamped, self.uwb_right_callback)
         rospy.Subscriber('/drive_to_position', String, self.drive_to_position_callback)
 
         # Initialise publishers
         self.arduino_drive_command_publisher = rospy.Publisher('/agrobot_drive/arduino_command', Int8, queue_size=1)
+        self.arduino_steering_command_publisher = rospy.Publisher('/agrobot_steering/arduino_command', Int8, queue_size=1)
 
 
     # Drive the Agrobot Gantry forward untill the target position is reached
@@ -78,7 +81,7 @@ class Drive(object):
         orientation = self.get_orientation()
 
         # Publish in the Arduino command topic to start driving forward
-        self.publish_arduino_command(1)
+        self.publish_arduino_drive_command(1)
 
         # Drive untill the target position is reached
         while(not target_reached and not self.object_detected and not rospy.is_shutdown()):
@@ -96,7 +99,7 @@ class Drive(object):
                 target_reached = self.position_agrobot.x >= target_position.x
 
         # Publish in the Arduino command topic to stop the Agrobot Gantry
-        self.publish_arduino_command(0)
+        self.publish_arduino_drive_command(0)
 
     # Drive the Agrobot Gantry to the next row of vegetables
     def drive_to_next_row(self):
@@ -111,19 +114,46 @@ class Drive(object):
 
         self.drive_forward_to_target(target_position)
 
-    # Turn the Agrobot Gantry 90 degrees to the left
-    def turn_left(self):
-        #
-        #
-        #
-        pass
+    # Turn the Agrobot Gantry 90 degrees
+    def turn(self, turn_direction):
+        if(turn_direction == 'left'):
+            turn_command = 3
+        elif(turn_direction == 'right'):
+            turn_command = 4
 
-    # Turn the Agrobot Gantry 90 degrees to the right
-    def turn_right(self):
-        #
-        #
-        #
-        pass
+        # Make the wheels turn to the steering positiong
+        self.publish_arduino_steering_command(3)
+
+        # Wait untill the steering is done
+        while(self.arduino_steering_state > 0 and not self.object_detected and not rospy.is_shutdown()):
+            # Wait till the Arduino sends a command it is done with turning the wheels
+            # The Arduino can do this task by itself, so a wait of 1 second is fine
+            rospy.sleep(1)
+
+        # Check what the rotation will be: from horizontal to vertical or vice versa
+        turn_orientation = 'undefined'
+        if(abs(self.position_uwb_left.x - self.position_uwb_right.x) < 0.3):
+            turn_orientation = 'VerticalToHorizontal'
+        elif(abs(self.position_uwb_left.y - self.position_uwb_right.y) < 0.3):
+            turn_orientation = 'HorizontalToVertical'
+
+        # Turn the robot untill it is rotated 90 degrees
+        self.publish_arduino_drive_command(turn_command)
+        position_reached = False
+        while(not position_reached and not self.object_detected and not rospy.is_shutdown()):
+            if(turn_orientation == 'HorizontalToVertical' and abs(self.position_uwb_left.x - self.position_uwb_right.x) > 0.05):
+                position_reached == True
+            elif(turn_orientation == 'VerticalToHorizontal' and abs(self.position_uwb_left.y - self.position_uwb_right.y) > 0.05):
+                position_reached == True
+        self.publish_arduino_drive_command(0)
+
+        # Make the wheels turn to the straight position
+        self.publish_arduino_steering_command(2)
+
+        # Wait untill the steering is done
+        while(self.arduino_steering_state > 0 and not self.object_detected and not rospy.is_shutdown()):
+            # Wait till the Arduino sends a command it is done with turning the wheels
+            rospy.sleep(4)
 
     # Get the orientation the Agrobot Gantry currently has
     # The orientation indicates where the front of the Agrobot Gantry is pointing to
@@ -145,18 +175,30 @@ class Drive(object):
 
         return orientation
 
-    # Publish the arduino command
-    def publish_arduino_command(self, data):
-        # 0 = stop
+    # Publish the arduino drive command
+    def publish_arduino_drive_command(self, data):
+        # 0 = idle / stop
         # 1 = drive forward
         # 2 = drive backward
         # 3 = turn left
         # 4 = turn right
         self.arduino_drive_command_publisher.publish(data)
 
+    # Publish the arduino steering command
+    def publish_arduino_steering_command(self, data):
+        # 0 = idle
+        # 1 = initialise
+        # 2 = turn wheels to straight position
+        # 3 = turn wheels to turn position
+        self.arduino_steering_command_publisher.publish(data)
+
     # Subscriber callback when a object is detected that is within 30 cm of the Agrobot Gantry (distance is hardcoded in Arduino)
     def object_detected_callback(self, message):
         self.object_detected = message.data
+
+    # Subscriber callback for the state of the Arduino that is responsible for the steering
+    def arduino_steering_state_callback(self, message):
+        self.arduino_steering_state = message.data
 
     # Subscriber callback for the position of the left UWB module
     def uwb_left_callback(self, message):
@@ -199,16 +241,16 @@ class Drive(object):
         elif(self.position_agrobot.x - target_position.x > 0.2):
             # The Agrobot Gantry is in the right row and the target position in the left row
             self.drive_forward_to_target(self.POSITION_P2)
-            self.turn_left()
+            self.turn('left')
             self.drive_forward_to_target(self.POSITION_P3)
-            self.turn_left()
+            self.turn('left')
             self.drive_forward_to_target(target_position)
         elif(self.position_agrobot.x - target_position.x < -0.2):
             # The Agrobot Gantry is in the left row and the target position in the right row
             self.drive_forward_to_target(self.POSITION_P3)
-            self.turn_right()
+            self.turn('right')
             self.drive_forward_to_target(self.POSITION_P2)
-            self.turn_right()
+            self.turn('right')
             self.drive_forward_to_target(target_position)
 
 
