@@ -1,4 +1,4 @@
-port: "/dev/ttyACM0"
+port: "/dev/uwb_left"
 tag_name: "tagLeft"
 use_network: False
 network: "network0"

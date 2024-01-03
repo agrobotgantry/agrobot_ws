@@ -1,0 +1,27 @@
+<launch>
+
+    <!-- Include the launch file of the navigation to add the UWBs -->
+    <include file="$(find navigation_pkg)/launch/uwb.launch" />
+
+    <!-- Connect the Arduino for the drive with ROS -->
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen">
+        <param name="port" value="/dev/arduino_drive" />
+        <param name="baud" value="57600" />
+    </node>
+
+    <!-- Connect the Arduino for the steering with ROS -->
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen">
+        <param name="port" value="/dev/arduino_steering" />
+        <param name="baud" value="57600" />
+    </node>
+
+    <!-- Connect the Arduino for the object detection with ROS -->
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen">
+        <param name="port" value="/dev/arduino_obstacle_detection" />
+        <param name="baud" value="57600" />
+    </node>
+
+    <!-- Launch the python code for driving the Agrobot -->
+    <node name="drive_node" pkg="drive_pkg" type="drive_node.py" respawn="true" output="screen" />
+    
+</launch>
