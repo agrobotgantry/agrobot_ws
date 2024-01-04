@@ -8,7 +8,7 @@
 
 import rospy
 from std_msgs.msg import Bool, Int8, String
-from geometry.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point
 
 class Drive(object):
 

@@ -397,6 +397,12 @@ drive_pkg_BINARY_DIR:STATIC=/home/cas/agrobot_ws/build/drive_pkg
 //Value Computed by CMake
 drive_pkg_SOURCE_DIR:STATIC=/home/cas/agrobot_ws/src/drive_pkg
 
+//The directory containing a CMake configuration file for geometry.
+geometry_DIR:PATH=geometry_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for geometry_msgs.
+geometry_msgs_DIR:PATH=/opt/ros/noetic/share/geometry_msgs/cmake
+
 //Value Computed by CMake
 gmock_BINARY_DIR:STATIC=/home/cas/agrobot_ws/build/drive_pkg/gtest/googlemock
 
