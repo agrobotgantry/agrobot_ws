@@ -7,7 +7,7 @@
 # =====================
 
 import rospy
-from std_msgs.msg import Bool, Int8, String
+from std_msgs.msg import Bool, Int8, String, Empty
 from geometry_msgs.msg import PoseStamped, Point
 
 class Drive(object):
@@ -69,11 +69,13 @@ class Drive(object):
         rospy.Subscriber('/dwm1001/tag/tagLeft/position', PoseStamped, self.uwb_left_callback)
         rospy.Subscriber('/dwm1001/tag/tagRight/position', PoseStamped, self.uwb_right_callback)
         rospy.Subscriber('/drive_to_position', String, self.drive_to_position_callback)
+        rospy.Subscriber('/initialise_wheels', Empty, self.initialise_wheels_callback)
 
         # Initialise publishers
         self.arduino_drive_command_publisher = rospy.Publisher('/agrobot_drive/arduino_command', Int8, queue_size=1)
         self.arduino_steering_command_publisher = rospy.Publisher('/agrobot_steering/arduino_command', Int8, queue_size=1)
-
+        self.initialise_wheels_done_publisher = rospy.Publisher('/initialise_wheels_done', Empty, queue_size=1)
+        self.driving_done_publisher = rospy.Publisher('/driving_done', Empty, queue_size=1)
 
     # Drive the Agrobot Gantry forward untill the target position is reached
     def drive_forward_to_target(self, target_position):
@@ -84,7 +86,10 @@ class Drive(object):
         self.publish_arduino_drive_command(1)
 
         # Drive untill the target position is reached
-        while(not target_reached and not self.object_detected and not rospy.is_shutdown()):
+        #
+        #
+        # VERGEET NIET HET VOLGENDE TERUG TE PLAATSEN: and not self.object_detected
+        while(not target_reached and not rospy.is_shutdown()):
             # Update the position of the Agrobot Gantry
             self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
             self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
@@ -115,7 +120,7 @@ class Drive(object):
         self.drive_forward_to_target(target_position)
 
     # Turn the Agrobot Gantry 90 degrees
-    def turn(self, turn_direction):
+    def turn(self, turn_direction, turn_orientation):
         if(turn_direction == 'left'):
             turn_command = 3
         elif(turn_direction == 'right'):
@@ -123,35 +128,37 @@ class Drive(object):
 
         # Make the wheels turn to the steering positiong
         self.publish_arduino_steering_command(3)
+        rospy.sleep(2)
 
         # Wait untill the steering is done
-        while(self.arduino_steering_state > 0 and not self.object_detected and not rospy.is_shutdown()):
+        #
+        # TERUG ZETTEN: and not self.object_detected
+        while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
             # Wait till the Arduino sends a command it is done with turning the wheels
             # The Arduino can do this task by itself, so a wait of 1 second is fine
             rospy.sleep(1)
 
-        # Check what the rotation will be: from horizontal to vertical or vice versa
-        turn_orientation = 'undefined'
-        if(abs(self.position_uwb_left.x - self.position_uwb_right.x) < 0.3):
-            turn_orientation = 'VerticalToHorizontal'
-        elif(abs(self.position_uwb_left.y - self.position_uwb_right.y) < 0.3):
-            turn_orientation = 'HorizontalToVertical'
-
         # Turn the robot untill it is rotated 90 degrees
         self.publish_arduino_drive_command(turn_command)
         position_reached = False
-        while(not position_reached and not self.object_detected and not rospy.is_shutdown()):
-            if(turn_orientation == 'HorizontalToVertical' and abs(self.position_uwb_left.x - self.position_uwb_right.x) > 0.05):
-                position_reached == True
-            elif(turn_orientation == 'VerticalToHorizontal' and abs(self.position_uwb_left.y - self.position_uwb_right.y) > 0.05):
-                position_reached == True
+        #
+        # TERUG ZETTEN: and not self.object_detected
+        while(not position_reached and not rospy.is_shutdown()):
+            if(turn_orientation == 'HorizontalToVertical' and abs(self.position_uwb_left.x - self.position_uwb_right.x) < 0.01):
+                position_reached = True
+            elif(turn_orientation == 'VerticalToHorizontal' and abs(self.position_uwb_left.y - self.position_uwb_right.y) < 0.01):
+                position_reached = True
+
         self.publish_arduino_drive_command(0)
+        rospy.sleep(1)
 
         # Make the wheels turn to the straight position
         self.publish_arduino_steering_command(2)
 
         # Wait untill the steering is done
-        while(self.arduino_steering_state > 0 and not self.object_detected and not rospy.is_shutdown()):
+        #
+        # TERUG ZETTEN: and not self.object_detected
+        while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
             # Wait till the Arduino sends a command it is done with turning the wheels
             rospy.sleep(4)
 
@@ -192,6 +199,20 @@ class Drive(object):
         # 3 = turn wheels to turn position
         self.arduino_steering_command_publisher.publish(data)
 
+    # Subscriber callback for initialising the wheels
+    def initialise_wheels_callback(self, message):
+        # Publish command to Arduino steering
+        self.publish_arduino_steering_command(1)
+        rospy.sleep(2)
+
+        # Wait till the Arduino sends a command it is done with turning the wheels
+        # The Arduino can do this task by itself, so a wait of 1 second is fine
+        while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
+            rospy.sleep(1)
+
+        msg = Empty()
+        self.initialise_wheels_done_publisher.publish(msg)
+
     # Subscriber callback when a object is detected that is within 30 cm of the Agrobot Gantry (distance is hardcoded in Arduino)
     def object_detected_callback(self, message):
         self.object_detected = message.data
@@ -210,50 +231,70 @@ class Drive(object):
 
     # Subscriber callback to drive to the correct position
     def drive_to_position_callback(self, message):
-        target_position = Point()
+        if(message.data == 'NEXT'):
+            # Drive to the next row
+            self.drive_to_next_row()
+        else:
+            target_position = Point()
 
-        # Select the correct position object according to the input string
-        if(message.data == 'P1'):
-            target_position = self.POSITION_P1
-        elif(message.data == 'P2'):
-            target_position = self.POSITION_P2
-        elif(message.data == 'P3'):
-            target_position = self.POSITION_P3
-        elif(message.data == 'P4'):
-            target_position = self.POSITION_P4
-        elif(message.data == 'B11'):
-            target_position = self.POSITION_B11
-        elif(message.data == 'B12'):
-            target_position = self.POSITION_B12
-        elif(message.data == 'B13'):
-            target_position = self.POSITION_B13
-        elif(message.data == 'B21'):
-            target_position = self.POSITION_B21
-        elif(message.data == 'B22'):
-            target_position = self.POSITION_B22
-        elif(message.data == 'B23'):
-            target_position = self.POSITION_B23
+            # Select the correct position object according to the input string
+            if(message.data == 'P1'):
+                target_position = self.POSITION_P1
+            elif(message.data == 'P2'):
+                target_position = self.POSITION_P2
+            elif(message.data == 'P3'):
+                target_position = self.POSITION_P3
+            elif(message.data == 'P4'):
+                target_position = self.POSITION_P4
+            elif(message.data == 'B11'):
+                target_position = self.POSITION_B11
+            elif(message.data == 'B12'):
+                target_position = self.POSITION_B12
+            elif(message.data == 'B13'):
+                target_position = self.POSITION_B13
+            elif(message.data == 'B21'):
+                target_position = self.POSITION_B21
+            elif(message.data == 'B22'):
+                target_position = self.POSITION_B22
+            elif(message.data == 'B23'):
+                target_position = self.POSITION_B23
 
-        # Check if robot is in the same row as the wanted position (within 0.2 meter)
-        if(abs(self.position_agrobot.x - target_position.x) < 0.2):
-            # Agrobot Gantry is in same row as target position
-            self.drive_forward_to_target(target_position)
-        elif(self.position_agrobot.x - target_position.x > 0.2):
-            # The Agrobot Gantry is in the right row and the target position in the left row
-            self.drive_forward_to_target(self.POSITION_P2)
-            self.turn('left')
-            self.drive_forward_to_target(self.POSITION_P3)
-            self.turn('left')
-            self.drive_forward_to_target(target_position)
-        elif(self.position_agrobot.x - target_position.x < -0.2):
-            # The Agrobot Gantry is in the left row and the target position in the right row
-            self.drive_forward_to_target(self.POSITION_P3)
-            self.turn('right')
-            self.drive_forward_to_target(self.POSITION_P2)
-            self.turn('right')
-            self.drive_forward_to_target(target_position)
+            # Update the position of the Agrobot Gantry
+            self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
+            self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
+            
+            # Check if robot is in the same row as the wanted position (within 0.2 meter)
+            if(abs(self.position_agrobot.x - target_position.x) < 0.5):
+                #
+                #
+                print("Target is in zelfde rij")
+                # Agrobot Gantry is in same row as target position
+                self.drive_forward_to_target(target_position)
+            elif(self.position_agrobot.x - target_position.x > 0.5):
+                #
+                #
+                print("Target is in linker rij, agrobot is in rechter rij")
+                # The Agrobot Gantry is in the right row and the target position in the left row
+                self.drive_forward_to_target(self.POSITION_P2)
+                self.turn('left', 'HorizontalToVertical')
+                self.drive_forward_to_target(self.POSITION_P3)
+                self.turn('left', 'VerticalToHorizontal')
+                self.drive_forward_to_target(target_position)
+            elif(self.position_agrobot.x - target_position.x < -0.5):
+                #
+                #
+                print("Target is in rechter rij, agrobot is in linker rij")
+                # The Agrobot Gantry is in the left row and the target position in the right row
+                self.drive_forward_to_target(self.POSITION_P3)
+                self.turn('right', 'HorizontalToVertical')
+                self.drive_forward_to_target(self.POSITION_P2)
+                self.turn('right', 'VerticalToHorizontal')
+                self.drive_forward_to_target(target_position)
 
-
+        # Publish empty message so the main program knows the target is reached
+        msg = Empty()
+        self.driving_done_publisher.publish(msg)
+        
 # Initialise node and call the program
 if __name__ == '__main__':
     rospy.init_node('drive_node')
