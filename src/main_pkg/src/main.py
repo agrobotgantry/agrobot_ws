@@ -30,10 +30,10 @@ class Main(object):
         rospy.Subscriber('/storage_done', Empty, self.storage_done)
 
         # Initialise publishers
-        self.initialise_wheels_publisher = rospy.Publisher('/initialise_wheels', Empty, queue_size=1)
-        self.drive_location_publisher = rospy.Publisher('/drive_to_position', Empty, queue_size=1)
-        self.start_gantry_publisher = rospy.Publisher('/start_gantry', String, queue_size=1)
-        self.start_storage_publisher = rospy.Publisher('/start_storage', Empty, queue_size=1)
+        self.initialise_wheels_publisher = rospy.Publisher('/initialise_wheels', Empty, queue_size=10)
+        self.drive_location_publisher = rospy.Publisher('/drive_to_position', Empty, queue_size=10)
+        self.start_gantry_publisher = rospy.Publisher('/start_gantry', String, queue_size=10)
+        self.start_storage_publisher = rospy.Publisher('/start_storage', Empty, queue_size=10)
 
     # Drive to the next position
     def drive_to_next_position(self):
@@ -87,6 +87,10 @@ class Main(object):
 
     # Start the agrobot program
     def agrobot_start_callback(self, data):
+        #
+        #
+        print('agrobot gestart')
+
         # Initialise the wheels
         msg = Empty()
         self.driving_done_publisher.publish(msg)
@@ -102,12 +106,23 @@ class Main(object):
     def initialise_wheels_done_callback(self, data):
         self.drive_initialised = True
 
+        #
+        #
+        print('Wielen geinitialiseerd')
+
     # Subscriber callback driving done
     def driving_done_callback(self, data):
+        #
+        #
+        print('rijden klaar')
+
         if(self.storage_full):
             # Empty storage
             msg = Empty()
             self.start_storage_publisher.publish(msg)
+            #
+            #
+            print('start bakken')
         else:
             # Start gantry
             self.start_gantry()
@@ -117,12 +132,23 @@ class Main(object):
         # Check if the storage is full
         if(self.storage_full):
             self.drive_location_publisher.publish('P1')
+
+            #
+            #
+            print('bakken vol')
         else:
             self.drive_to_next_position()
+
+        #
+        #
+        print('gantry klaar')
 
     # Subscriber callback storage done
     def storage_done(self, data):
         self.drive_to_next_position()
+        #
+        #
+        print('bakken klaar')
 
 # Initialise node and call the program
 if __name__ == '__main__':

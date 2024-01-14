@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/cas/agrobot_ws/devel/.private/main_pkg/setup.sh

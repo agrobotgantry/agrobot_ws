@@ -32,23 +32,23 @@ class Drive(object):
 
         self.POSITION_B11 = Point()
         self.POSITION_B11.x = 2.5
-        self.POSITION_B11.y = 2.5
+        self.POSITION_B11.y = 2.5 + 0.15
         self.POSITION_B12 = Point()
         self.POSITION_B12.x = 2.5
-        self.POSITION_B12.y = 3.5
+        self.POSITION_B12.y = 3.5 + 0.15
         self.POSITION_B13 = Point()
         self.POSITION_B13.x = 2.5
-        self.POSITION_B13.y = 4.5
+        self.POSITION_B13.y = 4.5 + 0.15
 
         self.POSITION_B21 = Point()
         self.POSITION_B21.x = 1.0
-        self.POSITION_B21.y = 2.5
+        self.POSITION_B21.y = 2.5 - 0.15
         self.POSITION_B22 = Point()
         self.POSITION_B22.x = 1.0
-        self.POSITION_B22.y = 3.5
+        self.POSITION_B22.y = 3.5 - 0.15
         self.POSITION_B23 = Point()
         self.POSITION_B23.x = 1.0
-        self.POSITION_B23.y = 4.5
+        self.POSITION_B23.y = 4.5 - 0.15
 
         # Properties for subscribers callbacks
         self.object_detected = False
@@ -72,10 +72,10 @@ class Drive(object):
         rospy.Subscriber('/initialise_wheels', Empty, self.initialise_wheels_callback)
 
         # Initialise publishers
-        self.arduino_drive_command_publisher = rospy.Publisher('/agrobot_drive/arduino_command', Int8, queue_size=1)
-        self.arduino_steering_command_publisher = rospy.Publisher('/agrobot_steering/arduino_command', Int8, queue_size=1)
-        self.initialise_wheels_done_publisher = rospy.Publisher('/initialise_wheels_done', Empty, queue_size=1)
-        self.driving_done_publisher = rospy.Publisher('/driving_done', Empty, queue_size=1)
+        self.arduino_drive_command_publisher = rospy.Publisher('/agrobot_drive/arduino_command', Int8, queue_size=10)
+        self.arduino_steering_command_publisher = rospy.Publisher('/agrobot_steering/arduino_command', Int8, queue_size=10)
+        self.initialise_wheels_done_publisher = rospy.Publisher('/initialise_wheels_done', Empty, queue_size=10)
+        self.driving_done_publisher = rospy.Publisher('/driving_done', Empty, queue_size=10)
 
     # Drive the Agrobot Gantry forward untill the target position is reached
     def drive_forward_to_target(self, target_position):
@@ -83,7 +83,10 @@ class Drive(object):
         orientation = self.get_orientation()
 
         # Publish in the Arduino command topic to start driving forward
-        self.publish_arduino_drive_command(1)
+        if(orientation == 'north' or orientation == 'west'):
+            self.publish_arduino_drive_command(1)
+        elif(orientation == 'south' or orientation == 'east'):
+            self.publish_arduino_drive_command(2)
 
         # Drive untill the target position is reached
         #
@@ -154,13 +157,14 @@ class Drive(object):
 
         # Make the wheels turn to the straight position
         self.publish_arduino_steering_command(2)
+        rospy.sleep(2)
 
         # Wait untill the steering is done
         #
         # TERUG ZETTEN: and not self.object_detected
         while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
             # Wait till the Arduino sends a command it is done with turning the wheels
-            rospy.sleep(4)
+            rospy.sleep(1)
 
     # Get the orientation the Agrobot Gantry currently has
     # The orientation indicates where the front of the Agrobot Gantry is pointing to

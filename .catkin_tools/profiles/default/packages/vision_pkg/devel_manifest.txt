@@ -1,0 +1,5 @@
+vision_pkg
+/home/cas/agrobot_ws/devel/.private/vision_pkg/cmake.lock /home/cas/agrobot_ws/devel/./cmake.lock
+/home/cas/agrobot_ws/devel/.private/vision_pkg/share/vision_pkg/cmake/vision_pkgConfig-version.cmake /home/cas/agrobot_ws/devel/share/vision_pkg/cmake/vision_pkgConfig-version.cmake
+/home/cas/agrobot_ws/devel/.private/vision_pkg/share/vision_pkg/cmake/vision_pkgConfig.cmake /home/cas/agrobot_ws/devel/share/vision_pkg/cmake/vision_pkgConfig.cmake
+/home/cas/agrobot_ws/devel/.private/vision_pkg/lib/pkgconfig/vision_pkg.pc /home/cas/agrobot_ws/devel/lib/pkgconfig/vision_pkg.pc

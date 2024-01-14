@@ -1,0 +1,1 @@
+/home/cas/agrobot_ws/devel/.private/main_pkg/share/main_pkg/cmake/main_pkgConfig-version.cmake
