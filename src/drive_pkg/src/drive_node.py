@@ -17,38 +17,63 @@ class Drive(object):
         # Properties for the locations in the playing field (distances in meters)
         # Those properties are constants and should not be changed during the program
         # A visible presentation of all the positions can be found in drive_pkg/docs/Agrobot Gantry waypoints.png
+        # Some positions have offsets which are determed during testing
         self.POSITION_P1 = Point()
-        self.POSITION_P1.x = 2.5
+        self.POSITION_P1.x = 2.5 - 0.15
         self.POSITION_P1.y = 1.25
         self.POSITION_P2 = Point()
-        self.POSITION_P2.x = 2.5
+        self.POSITION_P2.x = 2.5 - 0.15
         self.POSITION_P2.y = 5.75
         self.POSITION_P3 = Point()
-        self.POSITION_P3.x = 1.0
+        self.POSITION_P3.x = 1.0 + 0.1
         self.POSITION_P3.y = 5.75
         self.POSITION_P4 = Point()
-        self.POSITION_P4.x = 1.0
+        self.POSITION_P4.x = 1.0 + 0.1
         self.POSITION_P4.y = 1.25
 
         self.POSITION_B11 = Point()
         self.POSITION_B11.x = 2.5
-        self.POSITION_B11.y = 2.5 + 0.15
+        self.POSITION_B11.y = 2.5 + 0.20
+        self.POSITION_B11r2 = Point()
+        self.POSITION_B11r2.x = 2.5
+        self.POSITION_B11r2.y = 2.5 + 0.20 + 0.3
+        self.POSITION_B11r3 = Point()
+        self.POSITION_B11r3.x = 2.5
+        self.POSITION_B11r3.y = 2.5 + 0.20 + 0.6
         self.POSITION_B12 = Point()
         self.POSITION_B12.x = 2.5
-        self.POSITION_B12.y = 3.5 + 0.15
+        self.POSITION_B12.y = 3.5 + 0.20
+        self.POSITION_B12r2 = Point()
+        self.POSITION_B12r2.x = 2.5
+        self.POSITION_B12r2.y = 3.5 + 0.20 + 0.3
+        self.POSITION_B12r3 = Point()
+        self.POSITION_B12r3.x = 2.5
+        self.POSITION_B12r3.y = 3.5 + 0.20 + 0.6
         self.POSITION_B13 = Point()
         self.POSITION_B13.x = 2.5
-        self.POSITION_B13.y = 4.5 + 0.15
+        self.POSITION_B13.y = 4.5 + 0.20
 
         self.POSITION_B21 = Point()
         self.POSITION_B21.x = 1.0
-        self.POSITION_B21.y = 2.5 - 0.15
+        self.POSITION_B21.y = 2.5 - 0.40
         self.POSITION_B22 = Point()
         self.POSITION_B22.x = 1.0
-        self.POSITION_B22.y = 3.5 - 0.15
+        self.POSITION_B22.y = 3.5 - 0.40
+        self.POSITION_B22r2 = Point()
+        self.POSITION_B22r2.x = 1.0
+        self.POSITION_B22r2.y = 3.5 - 0.40 - 0.3
+        self.POSITION_B22r3 = Point()
+        self.POSITION_B22r3.x = 1.0
+        self.POSITION_B22r3.y = 3.5 - 0.40 - 0.6
         self.POSITION_B23 = Point()
         self.POSITION_B23.x = 1.0
-        self.POSITION_B23.y = 4.5 - 0.15
+        self.POSITION_B23.y = 4.5 - 0.40
+        self.POSITION_B23r2 = Point()
+        self.POSITION_B23r2.x = 1.0
+        self.POSITION_B23r2.y = 4.5 - 0.40 - 0.3
+        self.POSITION_B23r3 = Point()
+        self.POSITION_B23r3.x = 1.0
+        self.POSITION_B23r3.y = 4.5 - 0.40 - 0.6
 
         # Properties for subscribers callbacks
         self.object_detected = False
@@ -81,12 +106,37 @@ class Drive(object):
     def drive_forward_to_target(self, target_position):
         target_reached = False
         orientation = self.get_orientation()
+        direction = 'forward'
 
         # Publish in the Arduino command topic to start driving forward
-        if(orientation == 'north' or orientation == 'west'):
-            self.publish_arduino_drive_command(1)
-        elif(orientation == 'south' or orientation == 'east'):
-            self.publish_arduino_drive_command(2)
+        if(orientation == 'north'):
+            if(target_position.y <=  self.position_uwb_left.y):
+                self.publish_arduino_drive_command(2)
+                direction = 'backward'
+            else:
+                self.publish_arduino_drive_command(1)
+                direction = 'forward'
+        elif(orientation == 'south'):
+            if(target_position.y >=  self.position_uwb_left.y):
+                self.publish_arduino_drive_command(2)
+                direction = 'backward'
+            else:
+                self.publish_arduino_drive_command(1)
+                direction = 'forward'
+        elif(orientation == 'east'):
+            if(target_position.x <=  self.position_uwb_left.x):
+                self.publish_arduino_drive_command(2)
+                direction = 'backward'
+            else:
+                self.publish_arduino_drive_command(1)
+                direction = 'forward'
+        elif(orientation == 'west'):
+            if(target_position.x >=  self.position_uwb_left.x):
+                self.publish_arduino_drive_command(2)
+                direction = 'backward'
+            else:
+                self.publish_arduino_drive_command(1)
+                direction = 'forward'
 
         # Drive untill the target position is reached
         #
@@ -94,17 +144,29 @@ class Drive(object):
         # VERGEET NIET HET VOLGENDE TERUG TE PLAATSEN: and not self.object_detected
         while(not target_reached and not rospy.is_shutdown()):
             # Update the position of the Agrobot Gantry
-            self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
-            self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
+            #self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
+            #self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
+            self.position_agrobot.x = self.position_uwb_left.x
+            self.position_agrobot.y = self.position_uwb_left.y
 
-            if(orientation == 'north'):
-                target_reached = self.position_agrobot.y >= target_position.y
-            elif(orientation == 'south'):
-                target_reached = self.position_agrobot.y <= target_position.y
-            elif(orientation == 'west'):
-                target_reached = self.position_agrobot.x <= target_position.x
-            elif(orientation == 'east'):
-                target_reached = self.position_agrobot.x >= target_position.x
+            if(direction == 'forward'):
+                if(orientation == 'north'):
+                    target_reached = self.position_agrobot.y >= target_position.y
+                elif(orientation == 'south'):
+                    target_reached = self.position_agrobot.y <= target_position.y
+                elif(orientation == 'west'):
+                    target_reached = self.position_agrobot.x <= target_position.x
+                elif(orientation == 'east'):
+                    target_reached = self.position_agrobot.x >= target_position.x
+            elif(direction == 'backward'):
+                if(orientation == 'north'):
+                    target_reached = self.position_agrobot.y <= target_position.y
+                elif(orientation == 'south'):
+                    target_reached = self.position_agrobot.y >= target_position.y
+                elif(orientation == 'west'):
+                    target_reached = self.position_agrobot.x >= target_position.x
+                elif(orientation == 'east'):
+                    target_reached = self.position_agrobot.x <= target_position.x
 
         # Publish in the Arduino command topic to stop the Agrobot Gantry
         self.publish_arduino_drive_command(0)
@@ -252,16 +314,32 @@ class Drive(object):
                 target_position = self.POSITION_P4
             elif(message.data == 'B11'):
                 target_position = self.POSITION_B11
+            elif(message.data == 'B11r2'):
+                target_position = self.POSITION_B11r2
+            elif(message.data == 'B11r3'):
+                target_position = self.POSITION_B11r3
             elif(message.data == 'B12'):
                 target_position = self.POSITION_B12
+            elif(message.data == 'B12r2'):
+                target_position = self.POSITION_B12r2
+            elif(message.data == 'B12r3'):
+                target_position = self.POSITION_B12r3
             elif(message.data == 'B13'):
                 target_position = self.POSITION_B13
             elif(message.data == 'B21'):
                 target_position = self.POSITION_B21
             elif(message.data == 'B22'):
                 target_position = self.POSITION_B22
+            elif(message.data == 'B22r2'):
+                target_position = self.POSITION_B22r2
+            elif(message.data == 'B22r3'):
+                target_position = self.POSITION_B22r3
             elif(message.data == 'B23'):
                 target_position = self.POSITION_B23
+            elif(message.data == 'B23r2'):
+                target_position = self.POSITION_B23r2
+            elif(message.data == 'B23r3'):
+                target_position = self.POSITION_B23r3
 
             # Update the position of the Agrobot Gantry
             self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
@@ -269,14 +347,10 @@ class Drive(object):
             
             # Check if robot is in the same row as the wanted position (within 0.2 meter)
             if(abs(self.position_agrobot.x - target_position.x) < 0.5):
-                #
-                #
                 print("Target is in zelfde rij")
                 # Agrobot Gantry is in same row as target position
                 self.drive_forward_to_target(target_position)
             elif(self.position_agrobot.x - target_position.x > 0.5):
-                #
-                #
                 print("Target is in linker rij, agrobot is in rechter rij")
                 # The Agrobot Gantry is in the right row and the target position in the left row
                 self.drive_forward_to_target(self.POSITION_P2)
@@ -285,8 +359,6 @@ class Drive(object):
                 self.turn('left', 'VerticalToHorizontal')
                 self.drive_forward_to_target(target_position)
             elif(self.position_agrobot.x - target_position.x < -0.5):
-                #
-                #
                 print("Target is in rechter rij, agrobot is in linker rij")
                 # The Agrobot Gantry is in the left row and the target position in the right row
                 self.drive_forward_to_target(self.POSITION_P3)

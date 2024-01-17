@@ -1,0 +1,5 @@
+ai_pkg
+/home/cas/agrobot_ws/devel/.private/ai_pkg/cmake.lock /home/cas/agrobot_ws/devel/./cmake.lock
+/home/cas/agrobot_ws/devel/.private/ai_pkg/share/ai_pkg/cmake/ai_pkgConfig.cmake /home/cas/agrobot_ws/devel/share/ai_pkg/cmake/ai_pkgConfig.cmake
+/home/cas/agrobot_ws/devel/.private/ai_pkg/share/ai_pkg/cmake/ai_pkgConfig-version.cmake /home/cas/agrobot_ws/devel/share/ai_pkg/cmake/ai_pkgConfig-version.cmake
+/home/cas/agrobot_ws/devel/.private/ai_pkg/lib/pkgconfig/ai_pkg.pc /home/cas/agrobot_ws/devel/lib/pkgconfig/ai_pkg.pc

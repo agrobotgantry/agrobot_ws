@@ -1,0 +1,1 @@
+/home/cas/agrobot_ws/devel/.private/ai_pkg/lib/pkgconfig/ai_pkg.pc

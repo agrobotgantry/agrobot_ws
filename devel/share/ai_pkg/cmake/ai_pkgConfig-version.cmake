@@ -1,0 +1,1 @@
+/home/cas/agrobot_ws/devel/.private/ai_pkg/share/ai_pkg/cmake/ai_pkgConfig-version.cmake

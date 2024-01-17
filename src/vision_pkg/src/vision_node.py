@@ -86,10 +86,10 @@ class CameraNode:
             print(e)
         except KeyboardInterrupt:
             pass
-        finally:
-            self.release_camera()
+        #finally:
+        #    self.release_camera()
 
 if __name__ == '__main__':
     rospy.init_node('vision_node')
-    CameraNode(0)
+    CameraNode(1)
     rospy.spin()
