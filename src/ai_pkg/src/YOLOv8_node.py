@@ -2,7 +2,7 @@
 
 import cv2
 import rospy
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String, Empty, Int32
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from ultralytics import YOLO
@@ -15,6 +15,7 @@ import supervision as sv
 
 class YOLOv8ROS:
     def __init__(self, webcam_resolution=(1280, 720), model_path=r"/home/jetson/Documents/agrobot_ws/src/agrobot_yolov8/src/nano_model/best.pt"):
+        '''
         self.frame_width, self.frame_height = webcam_resolution
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
@@ -22,22 +23,32 @@ class YOLOv8ROS:
         if not self.cap.isOpened():
             rospy.logerr("Cannot open camera")
             exit()
-        
+        '''
+
         self.model = YOLO(model_path, task='detect')
         self.box_annotator = sv.BoxAnnotator(thickness=2, text_thickness=2, text_scale=1)
         self.prev_time = rospy.Time.now()
 
         # Subscribers
-        rospy.Subscriber('/start_yolo', Empty, self.start_yolo_callback)
+        rospy.Subscriber('/start_yolov8', Empty, self.start_yolo_callback)
 
         # Publishers
         self.image_pub = rospy.Publisher('/image_with_detections', Image, queue_size=10)
-        self.yolo_detection_publisher = rospy.Publisher('/yolo_detected_vegetable', String, queue_size=10)
+        self.yolo_detection_publisher = rospy.Publisher('/vision_yolov8_result', Int32, queue_size=10)
         self.bridge = CvBridge()
 
         #self.timer = rospy.Timer(rospy.Duration(0.03), self.detect_objects)  # Run detection every 0.03 seconds
 
-    def detect_objects(self, event):
+    def detect_objects(self):
+            webcam_resolution=(1280, 720)
+            self.frame_width, self.frame_height = webcam_resolution
+            self.cap = cv2.VideoCapture(3)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.frame_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.frame_height)
+            if not self.cap.isOpened():
+                rospy.logerr("Cannot open camera")
+                exit()
+
             ret, frame = self.cap.read()
             results = self.model(frame, agnostic_nms=True, conf=0.65)[0]
             detections = sv.Detections.from_ultralytics(results)
@@ -48,16 +59,16 @@ class YOLOv8ROS:
                 confidence = detections.confidence[class_id]
                 
                 if class_name == "radish":
-                    self.yolo_detection_publisher.publish('RADISH')
+                    self.yolo_detection_publisher.publish(3)
                     print("RADISH")
                 elif class_name == "lettuce":
-                    self.yolo_detection_publisher.publish('LETTUCE')
+                    self.yolo_detection_publisher.publish(2)
                     print("LETTUCE")
                 elif class_name == "carrot":
-                    self.yolo_detection_publisher.publish('CARROT')
+                    self.yolo_detection_publisher.publish(0)
                     print("CARROT")
                 elif class_name == "beetroot":
-                    self.yolo_detection_publisher.publish('BEETROOT')
+                    self.yolo_detection_publisher.publish(1)
                     print("BEETROOT") 
 
             '''
@@ -89,6 +100,8 @@ class YOLOv8ROS:
                 self.cap.release()
                 cv2.destroyAllWindows()
             '''
+
+            self.cap.release()
 
     def start_yolo_callback(self, msg):
         self.detect_objects()

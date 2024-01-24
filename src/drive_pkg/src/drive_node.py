@@ -102,11 +102,15 @@ class Drive(object):
         self.initialise_wheels_done_publisher = rospy.Publisher('/initialise_wheels_done', Empty, queue_size=10)
         self.driving_done_publisher = rospy.Publisher('/driving_done', Empty, queue_size=10)
 
+        # Determ if the ultrasoon sensors should stop the agrobot when something is detecteds
+        self.ultrasoon_aan = True
+
     # Drive the Agrobot Gantry forward untill the target position is reached
     def drive_forward_to_target(self, target_position):
         target_reached = False
         orientation = self.get_orientation()
         direction = 'forward'
+        ultrasoon_trigger = False
 
         # Publish in the Arduino command topic to start driving forward
         if(orientation == 'north'):
@@ -139,34 +143,41 @@ class Drive(object):
                 direction = 'forward'
 
         # Drive untill the target position is reached
-        #
-        #
-        # VERGEET NIET HET VOLGENDE TERUG TE PLAATSEN: and not self.object_detected
         while(not target_reached and not rospy.is_shutdown()):
-            # Update the position of the Agrobot Gantry
-            #self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
-            #self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
-            self.position_agrobot.x = self.position_uwb_left.x
-            self.position_agrobot.y = self.position_uwb_left.y
+            if(self.object_detected and self.ultrasoon_aan):
+                self.publish_arduino_drive_command(0)
+                ultrasoon_trigger = True
+            elif(ultrasoon_trigger and direction == 'forward'):
+                self.publish_arduino_drive_command(1)
+                ultrasoon_trigger = False
+            elif(ultrasoon_trigger and direction == 'backward'):
+                self.publish_arduino_drive_command(2)
+                ultrasoon_trigger = False
+            else:
+                # Update the position of the Agrobot Gantry
+                #self.position_agrobot.x = (self.position_uwb_left.x + self.position_uwb_right.x) / 2
+                #self.position_agrobot.y = (self.position_uwb_left.y + self.position_uwb_right.y) / 2
+                self.position_agrobot.x = self.position_uwb_left.x
+                self.position_agrobot.y = self.position_uwb_left.y
 
-            if(direction == 'forward'):
-                if(orientation == 'north'):
-                    target_reached = self.position_agrobot.y >= target_position.y
-                elif(orientation == 'south'):
-                    target_reached = self.position_agrobot.y <= target_position.y
-                elif(orientation == 'west'):
-                    target_reached = self.position_agrobot.x <= target_position.x
-                elif(orientation == 'east'):
-                    target_reached = self.position_agrobot.x >= target_position.x
-            elif(direction == 'backward'):
-                if(orientation == 'north'):
-                    target_reached = self.position_agrobot.y <= target_position.y
-                elif(orientation == 'south'):
-                    target_reached = self.position_agrobot.y >= target_position.y
-                elif(orientation == 'west'):
-                    target_reached = self.position_agrobot.x >= target_position.x
-                elif(orientation == 'east'):
-                    target_reached = self.position_agrobot.x <= target_position.x
+                if(direction == 'forward'):
+                    if(orientation == 'north'):
+                        target_reached = self.position_agrobot.y >= target_position.y
+                    elif(orientation == 'south'):
+                        target_reached = self.position_agrobot.y <= target_position.y
+                    elif(orientation == 'west'):
+                        target_reached = self.position_agrobot.x <= target_position.x
+                    elif(orientation == 'east'):
+                        target_reached = self.position_agrobot.x >= target_position.x
+                elif(direction == 'backward'):
+                    if(orientation == 'north'):
+                        target_reached = self.position_agrobot.y <= target_position.y
+                    elif(orientation == 'south'):
+                        target_reached = self.position_agrobot.y >= target_position.y
+                    elif(orientation == 'west'):
+                        target_reached = self.position_agrobot.x >= target_position.x
+                    elif(orientation == 'east'):
+                        target_reached = self.position_agrobot.x <= target_position.x
 
         # Publish in the Arduino command topic to stop the Agrobot Gantry
         self.publish_arduino_drive_command(0)
@@ -186,6 +197,7 @@ class Drive(object):
 
     # Turn the Agrobot Gantry 90 degrees
     def turn(self, turn_direction, turn_orientation):
+        ultrasoon_trigger = False
         if(turn_direction == 'left'):
             turn_command = 3
         elif(turn_direction == 'right'):
@@ -196,23 +208,41 @@ class Drive(object):
         rospy.sleep(2)
 
         # Wait untill the steering is done
-        #
-        # TERUG ZETTEN: and not self.object_detected
         while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
             # Wait till the Arduino sends a command it is done with turning the wheels
             # The Arduino can do this task by itself, so a wait of 1 second is fine
-            rospy.sleep(1)
+            if(self.object_detected and self.ultrasoon_aan):
+                self.publish_arduino_drive_command(0)
+                ultrasoon_trigger = True
+            elif(ultrasoon_trigger and direction == 'forward'):
+                self.publish_arduino_drive_command(1)
+                ultrasoon_trigger = False
+            elif(ultrasoon_trigger and direction == 'backward'):
+                self.publish_arduino_drive_command(2)
+                ultrasoon_trigger = False
+            else:
+                rospy.sleep(1)
 
         # Turn the robot untill it is rotated 90 degrees
         self.publish_arduino_drive_command(turn_command)
         position_reached = False
-        #
-        # TERUG ZETTEN: and not self.object_detected
+        ultrasoon_trigger = False
+
         while(not position_reached and not rospy.is_shutdown()):
-            if(turn_orientation == 'HorizontalToVertical' and abs(self.position_uwb_left.x - self.position_uwb_right.x) < 0.01):
-                position_reached = True
-            elif(turn_orientation == 'VerticalToHorizontal' and abs(self.position_uwb_left.y - self.position_uwb_right.y) < 0.01):
-                position_reached = True
+            if(self.object_detected and self.ultrasoon_aan):
+                self.publish_arduino_drive_command(0)
+                ultrasoon_trigger = True
+            elif(ultrasoon_trigger and direction == 'forward'):
+                self.publish_arduino_drive_command(1)
+                ultrasoon_trigger = False
+            elif(ultrasoon_trigger and direction == 'backward'):
+                self.publish_arduino_drive_command(2)
+                ultrasoon_trigger = False
+            else:
+                if(turn_orientation == 'HorizontalToVertical' and abs(self.position_uwb_left.x - self.position_uwb_right.x) < 0.01):
+                    position_reached = True
+                elif(turn_orientation == 'VerticalToHorizontal' and abs(self.position_uwb_left.y - self.position_uwb_right.y) < 0.01):
+                    position_reached = True
 
         self.publish_arduino_drive_command(0)
         rospy.sleep(1)
@@ -220,13 +250,22 @@ class Drive(object):
         # Make the wheels turn to the straight position
         self.publish_arduino_steering_command(2)
         rospy.sleep(2)
+        ultrasoon_trigger = False
 
         # Wait untill the steering is done
-        #
-        # TERUG ZETTEN: and not self.object_detected
         while(self.arduino_steering_state > 0 and not rospy.is_shutdown()):
-            # Wait till the Arduino sends a command it is done with turning the wheels
-            rospy.sleep(1)
+            if(self.object_detected and self.ultrasoon_aan):
+                self.publish_arduino_drive_command(0)
+                ultrasoon_trigger = True
+            elif(ultrasoon_trigger and direction == 'forward'):
+                self.publish_arduino_drive_command(1)
+                ultrasoon_trigger = False
+            elif(ultrasoon_trigger and direction == 'backward'):
+                self.publish_arduino_drive_command(2)
+                ultrasoon_trigger = False
+            else:
+                # Wait till the Arduino sends a command it is done with turning the wheels
+                rospy.sleep(1)
 
     # Get the orientation the Agrobot Gantry currently has
     # The orientation indicates where the front of the Agrobot Gantry is pointing to

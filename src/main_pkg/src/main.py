@@ -7,7 +7,7 @@
 # =====================
 
 import rospy
-from std_msgs.msg import Bool, Int8, String, Empty
+from std_msgs.msg import Bool, Int8, String, Empty, Int32
 
 class Main(object):
 
@@ -32,7 +32,7 @@ class Main(object):
         # Initialise publishers
         self.initialise_wheels_publisher = rospy.Publisher('/initialise_wheels', Empty, queue_size=10)
         self.drive_location_publisher = rospy.Publisher('/drive_to_position', String, queue_size=10)
-        self.start_gantry_publisher = rospy.Publisher('/start_gantry', String, queue_size=10)
+        self.start_gantry_publisher = rospy.Publisher('/start_gantry', Int32, queue_size=10)
         self.start_storage_publisher = rospy.Publisher('agrobot_storage/arduino_command', Int8, queue_size=10)
 
     # Drive to the next position
@@ -59,33 +59,39 @@ class Main(object):
             self.drive_location_publisher.publish('B22')
         elif(self.last_vegetable_location == 31 or self.last_vegetable_location == 34):
             self.drive_location_publisher.publish('NEXT')
+        else:
+            self.start_gantry()
 
     # Start the gantry to harvest a vegatable
     def start_gantry(self):
+        print("Gantry gestart voor groente: " + str(self.last_vegetable_location))
+
         if(self.last_vegetable_location == 1 or self.last_vegetable_location == 4 or self.last_vegetable_location == 7):
-            self.start_gantry_publisher.publish('left')
+            self.start_gantry_publisher.publish(1) # left
         elif(self.last_vegetable_location == 2 or self.last_vegetable_location == 5 or self.last_vegetable_location == 8):
-            self.start_gantry_publisher.publish('middle')
+            self.start_gantry_publisher.publish(3) # right
         elif(self.last_vegetable_location == 3 or self.last_vegetable_location == 6 or self.last_vegetable_location == 9):
-            self.start_gantry_publisher.publish('right')
+            self.start_gantry_publisher.publish(2) # middle
         elif(self.last_vegetable_location == 10 or self.last_vegetable_location == 13 or self.last_vegetable_location == 16):
-            self.start_gantry_publisher.publish('left')
+            self.start_gantry_publisher.publish(1) # left
         elif(self.last_vegetable_location == 11 or self.last_vegetable_location == 14 or self.last_vegetable_location == 17):
-            self.start_gantry_publisher.publish('middle')
+            self.start_gantry_publisher.publish(3) # right
         elif(self.last_vegetable_location == 12 or self.last_vegetable_location == 15 or self.last_vegetable_location == 18):
-            self.start_gantry_publisher.publish('right')
+            self.start_gantry_publisher.publish(2) # middle
         elif(self.last_vegetable_location == 19 or self.last_vegetable_location == 22 or self.last_vegetable_location == 25):
-            self.start_gantry_publisher.publish('left')
+            self.start_gantry_publisher.publish(1) # left
         elif(self.last_vegetable_location == 20 or self.last_vegetable_location == 23 or self.last_vegetable_location == 26):
-            self.start_gantry_publisher.publish('middle')
+            self.start_gantry_publisher.publish(3) # right
         elif(self.last_vegetable_location == 21 or self.last_vegetable_location == 24 or self.last_vegetable_location == 27):
-            self.start_gantry_publisher.publish('right')
+            self.start_gantry_publisher.publish(2) # middle
         elif(self.last_vegetable_location == 28 or self.last_vegetable_location == 31 or self.last_vegetable_location == 34):
-            self.start_gantry_publisher.publish('left')
+            self.start_gantry_publisher.publish(1) # left
         elif(self.last_vegetable_location == 29 or self.last_vegetable_location == 32 or self.last_vegetable_location == 35):
-            self.start_gantry_publisher.publish('middle')
+            self.start_gantry_publisher.publish(3) # right
         elif(self.last_vegetable_location == 30 or self.last_vegetable_location == 33 or self.last_vegetable_location == 36):
-            self.start_gantry_publisher.publish('right')
+            self.start_gantry_publisher.publish(2) # middle
+        elif(self.last_vegetable_location > 36):
+            print("Alles geoogst!")
 
     # Start the agrobot program
     def agrobot_start_callback(self, data):
@@ -125,7 +131,9 @@ class Main(object):
             self.start_storage_publisher.publish(1)
             self.storage_full = False
 
-            # Drive back to the last location
+            self.last_vegetable_location += 1
+
+            # Drive back to the new location
             if(self.last_vegetable_location == 1 or self.last_vegetable_location == 2 or self.last_vegetable_location == 3):
                 self.drive_location_publisher.publish('B11')
             elif(self.last_vegetable_location == 4 or self.last_vegetable_location == 5 or self.last_vegetable_location == 6):
@@ -157,6 +165,7 @@ class Main(object):
     # Subscriber callback gantry done
     def gantry_done(self, data):
         print('gantry klaar')
+        rospy.sleep(2)
         
         # Check if the storage is full
         if(self.storage_full):           

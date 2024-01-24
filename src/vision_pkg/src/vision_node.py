@@ -8,11 +8,13 @@ from geometry_msgs.msg import Point
 
 class CameraNode:
 
-    def __init__(self, video_source=0):
+    def __init__(self):
+        '''
         self.capture = cv2.VideoCapture(video_source)
 
         if not self.capture.isOpened():
             raise ValueError("Unable to open the camera. Check if the video source is valid.")
+        '''
 
         # Initial lower and upper bounds for detecting green color
         self.lower_green = np.array([35, 70, 70])
@@ -25,6 +27,19 @@ class CameraNode:
         self.vision_coordinates_publisher = rospy.Publisher('/vision_coordinates', Point, queue_size=10)
 
     def run(self):
+
+        # Publish position as ROS message
+        position = Point()
+        position.x = 50
+        position.y = 50 - 1800
+        self.vision_coordinates_publisher.publish(position)
+
+        '''
+        self.capture = cv2.VideoCapture(0)
+
+        if not self.capture.isOpened():
+            raise ValueError("Unable to open the camera. Check if the video source is valid.")
+        
         try:
             ret, frame = self.capture.read()
             if ret:
@@ -59,26 +74,30 @@ class CameraNode:
                     # Publish position as ROS message
                     position = Point()
                     position.x = rel_posX
-                    position.y = rel_posY
+                    position.y = rel_posY - 1800
                     self.vision_coordinates_publisher.publish(position)
 
-                '''
                 # De volgende regels zijn enkel als de uitkomst gevisualiseerd moet worden
                 cv2.line(frame, (width // 2, 0), (width // 2, height), (255, 255, 255), 1)
                 cv2.line(frame, (0, height // 2), (width, height // 2), (255, 255, 255), 1)
 
                 cv2.imshow('Camera Feed', frame)
                 cv2.imshow('Green Mask', mask_green)
-                '''
+        
+
+                self.capture.release()
             else:
                 print("Error reading frame.")
         except Exception as e:
             print(f"An error occurred: {e}")
+        '''
 
+    '''
     def release_camera(self):
-        self.capture.release()
-        cv2.destroyAllWindows()
-
+        #self.capture.release()
+        #cv2.destroyAllWindows()
+    '''
+    
     def start_vision_callback(self, msg):
         try:
             self.run()
@@ -91,5 +110,5 @@ class CameraNode:
 
 if __name__ == '__main__':
     rospy.init_node('vision_node')
-    CameraNode(1)
+    CameraNode()
     rospy.spin()

@@ -3,14 +3,23 @@
     <!-- Include the launch file of the drive package-->
     <include file="$(find drive_pkg)/launch/drive.launch" />
 
-    <!-- Connect the Arduino for the drive with ROS -->
+    <!-- Connect the Arduino for the storage with ROS -->
     <node name="rosserial-storage" pkg="rosserial_python" type="serial_node.py" output="screen">
         <param name="port" value="/dev/arduino_storage" />
         <param name="baud" value="57600" />
     </node>
 
+    <!-- Connect the Arduino for the gantry with ROS -->
+    <node name="rosserial-gantry" pkg="rosserial_python" type="serial_node.py" output="screen">
+        <param name="port" value="/dev/arduino_gantry" />
+        <param name="baud" value="57600" />
+    </node>
+
     <!-- Launch the python code for the vision -->
-    <!--<node name="vision_node" pkg="vision_pkg" type="vision_node.py" respawn="true" output="screen" />-->
+    <node name="vision_node" pkg="vision_pkg" type="vision_node.py" respawn="true" output="screen" />
+
+    <!-- Launch the python code for the ai -->
+    <node name="yolov8_node" pkg="ai_pkg" type="YOLOv8_node.py" respawn="true" output="screen" />
 
     <!-- Launch the python code for the main program -->
     <node name="main_node" pkg="main_pkg" type="main.py" respawn="true" output="screen" />
